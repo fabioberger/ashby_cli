@@ -87,10 +87,24 @@ Run `ashby <group> --help` for flags on each command.
 | `application` | create • info • list • update • change-stage • change-source • transfer • hire • reject • unreject • list-history |
 | `interview-event` | list |
 | `interview-plan` | list |
-| `interview-schedule` | create • info • list • update • cancel |
+| `interview-schedule` | create • list • update • cancel |
 | `interview-stage` | info • list |
 | `interview-stage-group` | list |
 | `interview` | info • list |
+| `interviewer-pool` | info • list |
+
+### Resolving interviewer userIds → name/email
+
+Ashby's public API has no `user.*` endpoint, so the only way to turn an interviewer `userId` (as returned by `interviewEvent.list`) into a name or email is via `interviewerPool.info`, whose `qualifiedMembers[]` and `trainees[]` arrays include `{id, firstName, lastName, email, globalRole, isEnabled, isPaused}`. Walk all pools once and build a lookup:
+
+```bash
+ashby interviewer-pool list --all --limit 100 \
+  | jq -r '.data[].id' \
+  | while read pid; do ashby interviewer-pool info --id "$pid"; done \
+  | jq -s '[.[] | .data | (.qualifiedMembers // []) + (.trainees // [])] | add | unique_by(.id)'
+```
+
+> **Note:** `interviewSchedule.info` does not exist in the Ashby API. To fetch schedule details, combine `interview-schedule list --application-id` with `interview-event list --interview-schedule-id`.
 
 ## Usage from Claude Skills
 
