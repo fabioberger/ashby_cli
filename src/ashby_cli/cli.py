@@ -46,6 +46,8 @@ def main(ctx: click.Context, api_key, base_url, timeout, pretty) -> None:
       4 Rate limited (HTTP 429)
 
     Authentication: set ASHBY_API_KEY or pass --api-key.
+
+    Ashby API reference: https://developers.ashbyhq.com/reference/introduction
     """
     set_pretty(pretty)
     ctx.ensure_object(dict)

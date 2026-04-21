@@ -78,7 +78,7 @@ ashby candidate list --sync-token <syncToken>
 
 ## Commands
 
-Run `ashby <group> --help` for flags on each command. All are read-only.
+Run `ashby <group> --help` for flags on each command. All are read-only. For endpoint-level details (request fields, response shape, error codes), see the Ashby API reference: <https://developers.ashbyhq.com/reference/introduction>.
 
 | Group | Commands |
 |---|---|
