@@ -133,6 +133,9 @@ Tests use [`responses`](https://github.com/getsentry/responses) to mock every HT
 
 ## Known gaps / calibration notes
 
-- **Endpoint coverage** is driven by the 2026 reference inventory (POST-only, `{resource}.{action}`). If Ashby adds new verbs, add a new subcommand in `src/ashby_cli/commands/<resource>.py` — the `_base.run_post` / `run_list` helpers keep it to ~10 lines.
-- **Multipart uploads** (`candidate.upload-resume`, `candidate.upload-file`) assume the form field names `resume` and `file`; adjust in `candidate.py::_upload` if Ashby's docs disagree for your org.
-- **Field name heuristics** (e.g. `candidateId` vs `id`) match the best info available at build time. Every command accepts `--json` for arbitrary overrides if a flag maps to the wrong body key.
+- **Read-only endpoints verified live** (2026-04-21) against a real Ashby tenant: every `list` / `info` / `search` command across all groups returns `ok:true` with correct pagination, cursor, and sync-token behaviour. Exit codes (0/1/2/3/4) match the contract.
+- **Write endpoints (`create`/`update`/`hire`/`reject`/...) are still untested against live data.** Field-name heuristics may be wrong for some mutation bodies — use `--json` overrides if Ashby rejects a request with `invalid_input`, and please open an issue with the endpoint name.
+- **Endpoint coverage:** to add a new Ashby verb, drop a subcommand into `src/ashby_cli/commands/<resource>.py` using `_base.run_post` / `run_list` (~10 lines), then register the group in `commands/__init__.py::ALL_GROUPS`.
+- **Multipart uploads** (`candidate.upload-resume`, `candidate.upload-file`) assume form field names `resume` and `file`; adjust in `candidate.py::_upload` if Ashby's docs disagree for your org.
+- **`interviewSchedule.info` does not exist** in the Ashby API — don't look for it. Combine `interview-schedule list --application-id` with `interview-event list --interview-schedule-id` to reconstruct schedule details.
+- **No public `user.*` endpoint.** Interviewer `userId`s (e.g. from `interviewEvent.interviewerUserIds`) resolve to name/email only via `interviewer-pool info` — see recipe above.
