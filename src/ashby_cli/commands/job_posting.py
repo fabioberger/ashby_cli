@@ -8,7 +8,7 @@ from ._base import json_body_options, pagination_options, run_list, run_post
 
 @click.group("job-posting")
 def job_posting():
-    """JobPosting endpoints (jobPosting.*)."""
+    """JobPosting endpoints (jobPosting.*) — read-only."""
 
 
 @job_posting.command("info")
@@ -40,25 +40,3 @@ def job_posting_list(ctx, cursor, limit, sync_token, created_after, walk_all, ma
              cursor=cursor, limit=limit, sync_token=sync_token,
              created_after=created_after, walk_all=walk_all, max_pages=max_pages,
              extra_body=extra)
-
-
-@job_posting.command("update")
-@click.option("--id", "id_", required=True, help="JobPosting UUID (sent as jobPostingId).")
-@click.option("--title")
-@click.option("--description-html", "description_html",
-              help="Raw HTML description (tip: for large bodies use --json-file).")
-@click.option("--location-id", "location_id")
-@click.option("--published", type=bool, default=None,
-              help="Set to true/false to publish or unpublish.")
-@json_body_options
-@click.pass_context
-def job_posting_update(ctx, id_, title, description_html, location_id, published,
-                       json_flag, json_file):
-    """POST jobPosting.update"""
-    run_post(ctx, "jobPosting.update", json_flag, json_file, {
-        "jobPostingId": id_,
-        "title": title,
-        "descriptionHtml": description_html,
-        "locationId": location_id,
-        "published": published,
-    })

@@ -13,6 +13,7 @@ ALL_RESOURCE_GROUPS = [
     "candidate", "file", "job", "job-posting", "application",
     "interview-event", "interview-plan", "interview-schedule",
     "interview-stage", "interview-stage-group", "interview",
+    "interviewer-pool",
 ]
 
 
@@ -104,22 +105,21 @@ def test_candidate_list_all_merges_pages(runner):
 
 
 @responses.activate
-def test_candidate_create_flags_become_body(runner):
+def test_candidate_search_flags_become_body(runner):
     responses.add(
         responses.POST,
-        f"{BASE_URL}/candidate.create",
-        json={"success": True, "results": {"id": "new"}},
+        f"{BASE_URL}/candidate.search",
+        json={"success": True, "results": []},
         status=200,
     )
     result = runner.invoke(main, [
-        "candidate", "create",
-        "--name", "Alice",
+        "candidate", "search",
         "--email", "a@x",
-        "--linkedin-url", "https://linkedin.com/in/a",
+        "--name", "Alice",
     ])
     assert result.exit_code == 0, result.output
     sent = json.loads(responses.calls[0].request.body)
-    assert sent == {"name": "Alice", "email": "a@x", "linkedInUrl": "https://linkedin.com/in/a"}
+    assert sent == {"email": "a@x", "name": "Alice"}
     auth = responses.calls[0].request.headers["Authorization"]
     assert auth == "Basic " + base64.b64encode(b"test-key:").decode()
 
@@ -128,19 +128,19 @@ def test_candidate_create_flags_become_body(runner):
 def test_json_body_with_flag_override(runner):
     responses.add(
         responses.POST,
-        f"{BASE_URL}/candidate.create",
-        json={"success": True, "results": {"id": "new"}},
+        f"{BASE_URL}/candidate.search",
+        json={"success": True, "results": []},
         status=200,
     )
     result = runner.invoke(main, [
-        "candidate", "create",
+        "candidate", "search",
         "--name", "FromFlag",
-        "--json", '{"name": "FromJson", "website": "https://example.com"}',
+        "--json", '{"name": "FromJson", "email": "extra@x"}',
     ])
     assert result.exit_code == 0, result.output
     sent = json.loads(responses.calls[0].request.body)
     assert sent["name"] == "FromFlag"
-    assert sent["website"] == "https://example.com"
+    assert sent["email"] == "extra@x"
 
 
 @responses.activate
@@ -210,7 +210,7 @@ def test_application_info_requires_one_id(runner):
     (["job-posting", "info", "--id", "p"], "jobPosting.info"),
     (["interview", "info", "--id", "i"], "interview.info"),
     (["interview-stage", "info", "--id", "s"], "interviewStage.info"),
-    (["interview-schedule", "info", "--id", "s"], "interviewSchedule.info"),
+    (["interviewer-pool", "info", "--id", "p"], "interviewerPool.info"),
 ])
 def test_endpoint_paths_match_inventory(runner, cmd, path):
     responses.add(responses.POST, f"{BASE_URL}/{path}", json={"success": True, "results": {}}, status=200)

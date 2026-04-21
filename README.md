@@ -1,13 +1,15 @@
 # ashby-cli
 
-Agent-friendly command-line wrapper over the [Ashby HQ public API](https://developers.ashbyhq.com/reference/introduction). Every invocation emits a single JSON object on stdout — designed to be called from Claude Skills.
+**Read-only**, agent-friendly command-line wrapper over the [Ashby HQ public API](https://developers.ashbyhq.com/reference/introduction). Every invocation emits a single JSON object on stdout — designed to be called from Claude Skills.
+
+> This CLI intentionally exposes only read endpoints (`list`, `info`, `search`, `listHistory`). No create / update / delete / upload commands. Pair with a read-only Ashby API key to keep blast radius low.
 
 ## Install
 
 ```bash
 cd ashby_cli
 pip install -e .
-export ASHBY_API_KEY=sk_...
+export ASHBY_API_KEY=sk_...   # use a read-only API key
 ashby --help
 ```
 
@@ -39,15 +41,15 @@ All commands emit exactly one line of JSON. Parse with `jq` / `json.loads`, disp
 Three styles, merged with **flag values winning**:
 
 ```bash
-# 1. Named flags (most common fields exposed)
-ashby candidate create --name Alice --email a@example.com
+# 1. Named flags (most common filters exposed)
+ashby candidate search --email a@example.com
 
 # 2. Inline JSON for nested / uncommon fields
-ashby candidate update --id u-1 --json '{"location":{"city":"NYC"}}'
+ashby application list --json '{"status":"Active"}'
 
 # 3. File or stdin
-ashby interview-schedule create --application-id a-1 --json-file events.json
-cat events.json | ashby interview-schedule create --application-id a-1 --json-file -
+ashby job list --json-file filters.json
+cat filters.json | ashby job list --json-file -
 ```
 
 ## Pagination
@@ -76,18 +78,18 @@ ashby candidate list --sync-token <syncToken>
 
 ## Commands
 
-Run `ashby <group> --help` for flags on each command.
+Run `ashby <group> --help` for flags on each command. All are read-only.
 
 | Group | Commands |
 |---|---|
-| `candidate` | create • info • list • search • update • add-project • remove-project • upload-resume • upload-file |
-| `file` | info • create-upload-handle |
-| `job` | create • info • list • update • set-status • search |
-| `job-posting` | info • list • update |
-| `application` | create • info • list • update • change-stage • change-source • transfer • hire • reject • unreject • list-history |
+| `candidate` | info • list • search |
+| `file` | info |
+| `job` | info • list • search |
+| `job-posting` | info • list |
+| `application` | info • list • list-history |
 | `interview-event` | list |
 | `interview-plan` | list |
-| `interview-schedule` | create • list • update • cancel |
+| `interview-schedule` | list |
 | `interview-stage` | info • list |
 | `interview-stage-group` | list |
 | `interview` | info • list |
@@ -133,9 +135,8 @@ Tests use [`responses`](https://github.com/getsentry/responses) to mock every HT
 
 ## Known gaps / calibration notes
 
-- **Read-only endpoints verified live** (2026-04-21) against a real Ashby tenant: every `list` / `info` / `search` command across all groups returns `ok:true` with correct pagination, cursor, and sync-token behaviour. Exit codes (0/1/2/3/4) match the contract.
-- **Write endpoints (`create`/`update`/`hire`/`reject`/...) are still untested against live data.** Field-name heuristics may be wrong for some mutation bodies — use `--json` overrides if Ashby rejects a request with `invalid_input`, and please open an issue with the endpoint name.
-- **Endpoint coverage:** to add a new Ashby verb, drop a subcommand into `src/ashby_cli/commands/<resource>.py` using `_base.run_post` / `run_list` (~10 lines), then register the group in `commands/__init__.py::ALL_GROUPS`.
-- **Multipart uploads** (`candidate.upload-resume`, `candidate.upload-file`) assume form field names `resume` and `file`; adjust in `candidate.py::_upload` if Ashby's docs disagree for your org.
+- **Read-only by design.** Write endpoints (`create`, `update`, `changeStage`, `hire`, `reject`, `uploadResume`, etc.) are intentionally not wrapped. Use the Ashby web UI or a separate tool for mutations — and pair this CLI with a read-only API key.
+- **Read-only endpoints verified live** (2026-04-21) against a real Ashby tenant: every `list` / `info` / `search` / `list-history` command returns `ok:true` with correct pagination, cursor, and sync-token behaviour. Exit codes (0/1/2/3/4) match the contract.
+- **Adding a new read verb:** drop a subcommand into `src/ashby_cli/commands/<resource>.py` using `_base.run_post` / `run_list` (~10 lines), then register the group in `commands/__init__.py::ALL_GROUPS`.
 - **`interviewSchedule.info` does not exist** in the Ashby API — don't look for it. Combine `interview-schedule list --application-id` with `interview-event list --interview-schedule-id` to reconstruct schedule details.
 - **No public `user.*` endpoint.** Interviewer `userId`s (e.g. from `interviewEvent.interviewerUserIds`) resolve to name/email only via `interviewer-pool info` — see recipe above.

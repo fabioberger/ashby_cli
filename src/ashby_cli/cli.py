@@ -28,7 +28,10 @@ CONTEXT_SETTINGS = {
               help="Pretty-print JSON output (default compact).")
 @click.pass_context
 def main(ctx: click.Context, api_key, base_url, timeout, pretty) -> None:
-    """Agent-friendly command-line wrapper over the Ashby HQ API.
+    """Agent-friendly, read-only command-line wrapper over the Ashby HQ API.
+
+    This CLI exposes ONLY read endpoints (list / info / search / listHistory).
+    No create, update, delete, or file-upload commands are available — by design.
 
     Every command emits a single JSON object on stdout:
 
