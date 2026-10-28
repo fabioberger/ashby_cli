@@ -77,39 +77,21 @@ class AshbyClient:
     def _auth(self) -> HTTPBasicAuth:
         return HTTPBasicAuth(self.api_key, "")
 
-    def post(
-        self,
-        path: str,
-        body: dict | None = None,
-        *,
-        files: dict | None = None,
-    ) -> EnvelopeResult:
+    def post(self, path: str, body: dict | None = None) -> EnvelopeResult:
         url = f"{self.base_url}/{path}"
-        headers = {"Accept": "application/json", "User-Agent": USER_AGENT}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
+        }
         try:
-            if files:
-                form = {}
-                for k, v in (body or {}).items():
-                    if v is None:
-                        continue
-                    form[k] = v if isinstance(v, (str, bytes)) else str(v)
-                resp = self._session.post(
-                    url,
-                    auth=self._auth(),
-                    headers=headers,
-                    data=form,
-                    files=files,
-                    timeout=self.timeout,
-                )
-            else:
-                headers["Content-Type"] = "application/json"
-                resp = self._session.post(
-                    url,
-                    auth=self._auth(),
-                    headers=headers,
-                    json=body or {},
-                    timeout=self.timeout,
-                )
+            resp = self._session.post(
+                url,
+                auth=self._auth(),
+                headers=headers,
+                json=body or {},
+                timeout=self.timeout,
+            )
         except requests.Timeout:
             raise ClientError(
                 "timeout",

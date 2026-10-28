@@ -76,12 +76,10 @@ def run_post(
     json_flag: str | None,
     json_file: str | None,
     flag_fields: dict[str, Any] | None = None,
-    *,
-    files: dict | None = None,
 ) -> None:
     body = load_body(json_flag, json_file, flag_fields or {})
     try:
-        result = get_client(ctx).post(path, body, files=files)
+        result = get_client(ctx).post(path, body)
     except ClientError as e:
         emit_client_error(e)
         return
